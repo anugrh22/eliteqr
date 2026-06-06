@@ -1,0 +1,169 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, system-ui, sans-serif;
+  background: #f7f9fb;
+  color: #1d2939;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 100%);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.app-shell {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 4vw, 3.8rem);
+  letter-spacing: -0.05em;
+}
+
+.hero p {
+  margin: 16px auto 0;
+  max-width: 720px;
+  color: #475569;
+}
+
+main {
+  display: grid;
+  gap: 24px;
+}
+
+.card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.05);
+}
+
+.card h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 18px;
+  color: #334155;
+}
+
+input {
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #0f172a;
+  outline: none;
+}
+
+input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+button {
+  border: none;
+  padding: 14px 20px;
+  border-radius: 14px;
+  cursor: pointer;
+  color: white;
+  background: #4338ca;
+  transition: transform 0.16s ease, background-color 0.16s ease;
+}
+
+button.secondary {
+  background: #64748b;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+.status-box {
+  margin-top: 18px;
+  color: #334155;
+  font-size: 0.98rem;
+}
+
+.preview-card img,
+.saved-item img {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+}
+
+.placeholder {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+  border: 2px dashed #cbd5e1;
+  border-radius: 18px;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.saved-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.saved-item {
+  display: grid;
+  grid-template-columns: 108px 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.saved-item strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.saved-item p {
+  margin: 0;
+  color: #475569;
+  word-break: break-all;
+}
+
+@media (min-width: 880px) {
+  main {
+    grid-template-columns: 1.2fr 0.8fr;
+  }
+
+  .saved-card {
+    grid-column: 1 / -1;
+  }
+}
