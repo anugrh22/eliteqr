@@ -137,6 +137,26 @@ function App() {
     localStorage.setItem('eliteqr_theme', newTheme);
     document.documentElement.setAttribute('data-theme', newTheme);
   };
+const generateQR = async () => {
+
+  const response = await fetch(
+    "http://127.0.0.1:8000/create-qr",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        url: url
+      })
+    }
+  );
+
+  const data = await response.json();
+
+  console.log(data);
+};
+
 
   return (
     <div className="app-shell">
@@ -173,7 +193,12 @@ function App() {
             </label>
 
             <div className="button-row">
-              <button type="submit">Generate Preview</button>
+              <button
+  type="button"
+  onClick={generateQR}
+>
+  Generate Preview
+</button>
               <button type="button" onClick={handleDownload} className="secondary">
                 Download QR
               </button>
