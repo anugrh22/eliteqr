@@ -21,6 +21,7 @@ function App() {
   const [status, setStatus] = useState('Ready to generate a QR code.');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const apiUrl = '/api';
+  const previewApiUrl = '/create-qr';
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('eliteqr_theme') as 'light' | 'dark' | null;
@@ -58,6 +59,14 @@ function App() {
 
   const canGenerate = useMemo(() => url.trim().length > 0, [url]);
 
+  const generateLocalQR = async (value: string) => {
+    return QRCode.toDataURL(value, {
+      errorCorrectionLevel: 'H',
+      type: 'image/png',
+      width: 300,
+    });
+  };
+
   const handleGenerate = async (event: FormEvent) => {
     event.preventDefault();
     if (!canGenerate) {
@@ -67,15 +76,33 @@ function App() {
 
     setStatus('Generating QR code...');
     try {
-      const qrData = await QRCode.toDataURL(url.trim(), {
-        errorCorrectionLevel: 'H',
-        type: 'image/png',
-        width: 300,
+      const response = await fetch(previewApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: url.trim(), width: 300 }),
       });
-      setPreview(qrData);
+
+      if (!response.ok) {
+        throw new Error('Backend preview request failed');
+      }
+
+      const data = await response.json();
+      if (typeof data.image !== 'string' || !data.image.startsWith('data:image/png;base64,')) {
+        throw new Error('Unexpected backend preview response');
+      }
+
+      setPreview(data.image);
       setStatus('QR code generated successfully.');
-    } catch (error) {
-      setStatus('Failed to generate QR code. Check the URL and try again.');
+    } catch (backendError) {
+      try {
+        const qrData = await generateLocalQR(url.trim());
+        setPreview(qrData);
+        setStatus('Backend preview unavailable. Generated locally instead.');
+      } catch (localError) {
+        setStatus('Failed to generate QR code. Check the URL and try again.');
+      }
     }
   };
 
@@ -137,25 +164,6 @@ function App() {
     localStorage.setItem('eliteqr_theme', newTheme);
     document.documentElement.setAttribute('data-theme', newTheme);
   };
-const generateQR = async () => {
-
-  const response = await fetch(
-    "http://127.0.0.1:8000/create-qr",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        url: url
-      })
-    }
-  );
-
-  const data = await response.json();
-
-  console.log(data);
-};
 
 
   return (
@@ -193,12 +201,7 @@ const generateQR = async () => {
             </label>
 
             <div className="button-row">
-              <button
-  type="button"
-  onClick={generateQR}
->
-  Generate Preview
-</button>
+              <button type="submit">Generate Preview</button>
               <button type="button" onClick={handleDownload} className="secondary">
                 Download QR
               </button>
