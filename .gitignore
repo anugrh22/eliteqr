@@ -3,3 +3,9 @@ dist
 .DS_Store
 .env
 *.log
+
+# Python and backend environment
+backend/venv/
+venv/
+__pycache__/
+*.pyc
