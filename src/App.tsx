@@ -6,6 +6,7 @@ type SavedQR = {
   label: string;
   url: string;
   image: string;
+  createdAt?: string;
 };
 
 function buildSlug() {
@@ -18,12 +19,37 @@ function App() {
   const [preview, setPreview] = useState('');
   const [savedQRs, setSavedQRs] = useState<SavedQR[]>([]);
   const [status, setStatus] = useState('Ready to generate a QR code.');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const apiUrl = '/api';
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('eliteqr_theme') as 'light' | 'dark' | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem('eliteqr_saved_qrs');
     if (stored) {
       setSavedQRs(JSON.parse(stored));
     }
+
+    fetch(`${apiUrl}/qrs`)
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error('Failed to load saved QR codes');
+        }
+        return res.json();
+      })
+      .then((items: SavedQR[]) => {
+        setSavedQRs(items);
+        setStatus('Loaded saved QR codes from the backend.');
+      })
+      .catch(() => {
+        setStatus('Backend unavailable. Working with local saved QR codes.');
+      });
   }, []);
 
   useEffect(() => {
@@ -53,7 +79,7 @@ function App() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!preview) {
       setStatus('Generate the QR code before saving.');
       return;
@@ -64,15 +90,63 @@ function App() {
       label: label.trim() || 'QR Code',
       url: url.trim(),
       image: preview,
+      createdAt: new Date().toISOString(),
     };
-    setSavedQRs([newQR, ...savedQRs]);
-    setStatus('QR code saved locally.');
+
+    setStatus('Saving QR code to backend...');
+    try {
+      const response = await fetch(`${apiUrl}/qrs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newQR),
+      });
+
+      if (!response.ok) {
+        throw new Error('Backend save failed');
+      }
+
+      const saved = await response.json();
+      setSavedQRs((current) => [saved, ...current]);
+      setStatus('QR code saved to backend.');
+    } catch (error) {
+      setSavedQRs((current) => [newQR, ...current]);
+      setStatus('Backend unavailable. Saved locally instead.');
+    }
+  };
+
+  const handleDownload = () => {
+    if (!preview) {
+      setStatus('Generate the QR code before downloading.');
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.href = preview;
+    link.download = `${label.trim() || 'qrcode'}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setStatus('QR code downloaded successfully.');
+  };
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('eliteqr_theme', newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
   };
 
   return (
     <div className="app-shell">
       <header className="hero">
-        <h1>EliteQR</h1>
+        <div className="header-top">
+          <h1>EliteQR</h1>
+          <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
+        </div>
         <p>Create, preview, and manage your QR codes from the browser.</p>
       </header>
 
@@ -100,8 +174,8 @@ function App() {
 
             <div className="button-row">
               <button type="submit">Generate Preview</button>
-              <button type="button" onClick={handleSave} className="secondary">
-                Save QR
+              <button type="button" onClick={handleDownload} className="secondary">
+                Download QR
               </button>
             </div>
           </form>
