@@ -7,12 +7,12 @@ export default defineConfig({
     port: 5174,
     proxy: {
       '/api': {
-        target: 'http://localhost:4000',
+        target: 'http://127.0.0.1:8001',
         changeOrigin: true,
         secure: false,
       },
       '/create-qr': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8001',
         changeOrigin: true,
         secure: false,
       },
