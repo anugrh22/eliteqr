@@ -14,6 +14,7 @@ function buildSlug() {
 }
 
 function App() {
+  const [qrImage, setQrImage] = useState("");
   const [label, setLabel] = useState('Menu QR');
   const [url, setUrl] = useState('https://example.com');
   const [preview, setPreview] = useState('');
@@ -22,6 +23,40 @@ function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const apiUrl = '/api';
   const previewApiUrl = '/create-qr';
+  const downloadQR = () => {
+
+    if (!preview) {
+      alert("Generate a QR first");
+      return;
+    }
+
+    const link = document.createElement("a");
+
+    link.href = preview;
+
+    link.download = "qr.png";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+  };
+
+  const generateQR = async () => {const response = await fetch("/create-qr", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    url: url,
+    width: 300,
+  }),
+});
+  const data = await response.json();
+  setQrImage(data.image);
+}
+
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('eliteqr_theme') as 'light' | 'dark' | null;
@@ -194,15 +229,28 @@ function App() {
             <label>
               Destination URL
               <input
+                type="text"
+                placeholder="Enter URL"
                 value={url}
                 onChange={(event) => setUrl(event.target.value)}
-                placeholder="https://your-destination.com"
               />
             </label>
 
+            <button type="button" onClick={generateQR}>
+              Generate QR
+            </button>
+
+            {qrImage && (
+              <img
+                src={qrImage}
+                alt="QR Code"
+                width="300"
+              />
+            )}
+
             <div className="button-row">
               <button type="submit">Generate Preview</button>
-              <button type="button" onClick={handleDownload} className="secondary">
+              <button type="button" onClick={downloadQR} className="secondary">
                 Download QR
               </button>
             </div>
