@@ -66,3 +66,16 @@ def test_qrs():
     db.close()
 
     return qrs
+
+
+
+@app.get("/api/qrs")
+def get_qrs():
+
+    db = SessionLocal()
+
+    qrs = db.query(QRCode).all()
+
+    db.close()
+
+    return qrs
