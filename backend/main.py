@@ -79,3 +79,19 @@ def get_qrs():
     db.close()
 
     return qrs
+
+
+
+@app.delete("/api/qrs/{qr_id}")
+def delete_qr(qr_id: int):
+    db = SessionLocal()
+
+    qr = db.query(QRCode).filter(QRCode.id == qr_id).first()
+
+    if qr:
+        db.delete(qr)
+        db.commit()
+
+    db.close()
+
+    return {"message": "QR deleted"}
