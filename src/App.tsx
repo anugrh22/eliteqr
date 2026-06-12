@@ -22,6 +22,9 @@ function App() {
   const [status, setStatus] = useState('Ready to generate a QR code.');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [search, setSearch] = useState("");
+  const [token, setToken] = useState(
+  localStorage.getItem("token") || ""
+  )
   const [selectedQR, setSelectedQR] = useState<SavedQR | null>(null);
 
   const previewApiUrl = '/create-qr';
@@ -149,10 +152,19 @@ function App() {
     setStatus('Generating QR code...');
 
     try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setStatus("Please login first.");
+        return;
+      } 
+
+
       const response = await fetch(previewApiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           url: url.trim(),
@@ -264,6 +276,21 @@ function App() {
         </div>
 
         <p>Create, preview, and manage your QR codes from the browser.</p>
+        <div style={{
+          display: 'flex',
+         gap: '10px',
+         justifyContent: 'center',
+         marginTop: '20px'
+       }}>
+         <a href="/login">
+           <button>Login</button>
+         </a>
+
+         <a href="/register">
+           <button className="secondary">Register</button>
+         </a>
+       </div>
+       
       </header>
 
       <main>
