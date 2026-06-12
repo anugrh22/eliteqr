@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import QRCode from 'qrcode';
 
 type SavedQR = {
-  id: string;
+  id: number | string;
   label?: string;
   url: string;
   image?: string;
@@ -65,6 +65,25 @@ function App() {
   };
 
   
+
+  const deleteQr = async (qrId: number | string) => {
+    try {
+      const response = await fetch(`/api/qrs/${qrId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete QR code.');
+      }
+
+      setSavedQRs((current) => current.filter((item) => String(item.id) !== String(qrId)));
+      setStatus('QR code deleted successfully.');
+      await fetchQrs();
+    } catch (error) {
+      console.error(error);
+      setStatus('Unable to delete QR code. Please try again.');
+    }
+  };
 
   const handleGenerate = async (event: FormEvent) => {
     event.preventDefault();
@@ -299,6 +318,16 @@ function App() {
 
                     <p>{item.created_at}</p>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => deleteQr(item.id)}
+                    className="delete-btn"
+                    title="Delete QR"
+                    aria-label="Delete QR"
+                  >
+                    Delete
+                  </button>
 
                 </article>
 
