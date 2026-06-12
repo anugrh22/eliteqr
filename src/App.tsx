@@ -123,6 +123,20 @@ function App() {
     setStatus('QR history exported successfully.');
   };
 
+  const clearAllQrs = () => {
+    const confirmDelete = window.confirm(
+      'Are you sure you want to delete all QR history?'
+    );
+
+   if (!confirmDelete) return;
+
+   setSavedQRs([]);
+
+   localStorage.removeItem('eliteqr_saved_qrs');
+
+   setStatus('All QR history cleared.');
+  };
+
 
   const handleGenerate = async (event: FormEvent) => {
     event.preventDefault();
@@ -341,9 +355,37 @@ function App() {
                borderRadius: "8px",
             }}
           />
+          
+          <div
+              style={{
+                display: 'flex',
+                gap: '10px',
+                marginBottom: '16px',
+              }}
+          >
+             <button
+               type="button"
+               onClick={exportQrs}
+               className="secondary"
+             >
+               Export History
+             </button>
 
+             <button
+               type="button"
+               onClick={clearAllQrs}
+               className="delete-btn"
+             >
+  
+               Clear All
+             </button>
+          </div>
+
+
+         
           {savedQRs.length === 0 ? (
 
+            
             <p>No saved QR codes yet. Generate one to start.</p>
 
           ) : (
