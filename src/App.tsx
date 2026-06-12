@@ -22,6 +22,7 @@ function App() {
   const [status, setStatus] = useState('Ready to generate a QR code.');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [search, setSearch] = useState("");
+  const [selectedQR, setSelectedQR] = useState<SavedQR | null>(null);
 
   const previewApiUrl = '/create-qr';
 
@@ -321,6 +322,8 @@ function App() {
                 <article
                   key={item.id}
                   className="saved-item"
+                  onClick={() => setSelectedQR(item)}
+                  style={{ cursor: "pointer" }}
                 >
 
                   {item.image && (
@@ -356,6 +359,33 @@ function App() {
           )}
 
         </section>
+        {selectedQR && (
+          <section className="card preview-card">
+            <h2>QR Details</h2>
+
+            {selectedQR.image && (
+              <img
+                src={selectedQR.image}
+                alt="Selected QR"
+                width="200"
+              />
+           )}
+
+           <p>
+            <strong>ID:</strong> {selectedQR.id}
+           </p>
+
+           <p>
+            <strong>URL:</strong> {selectedQR.url}
+          </p>
+
+           <p>
+            <strong>Created:</strong> {selectedQR.created_at}
+          </p>
+         </section>
+        )}
+        
+        
 
       </main>
 
