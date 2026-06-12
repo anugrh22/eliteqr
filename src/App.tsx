@@ -21,6 +21,7 @@ function App() {
   const [savedQRs, setSavedQRs] = useState<SavedQR[]>([]);
   const [status, setStatus] = useState('Ready to generate a QR code.');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [search, setSearch] = useState("");
 
   const previewApiUrl = '/create-qr';
 
@@ -290,6 +291,19 @@ function App() {
 
           <h2>Saved QR Codes</h2>
 
+          <input
+            type="text"
+            placeholder="Search QR history..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+               width: "100%",
+               padding: "10px",
+               marginBottom: "16px",
+               borderRadius: "8px",
+            }}
+          />
+
           {savedQRs.length === 0 ? (
 
             <p>No saved QR codes yet. Generate one to start.</p>
@@ -298,7 +312,11 @@ function App() {
 
             <div className="saved-grid">
 
-              {savedQRs.map((item) => (
+             {savedQRs
+               .filter((item) =>
+                 item.url.toLowerCase().includes(search.toLowerCase())
+               )
+               .map((item) => (
 
                 <article
                   key={item.id}
