@@ -97,6 +97,32 @@ function App() {
     }
   };
 
+  const exportQrs = () => {
+    const dataStr = JSON.stringify(savedQRs, null, 2);
+
+    const blob = new Blob([dataStr], {
+      type: 'application/json',
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+
+    link.href = url;
+
+    link.download = 'exported_qrs.json';
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+
+    setStatus('QR history exported successfully.');
+  };
+
 
   const handleGenerate = async (event: FormEvent) => {
     event.preventDefault();
