@@ -87,6 +87,17 @@ function App() {
     }
   };
 
+  const copyUrl = async (url: string) => {
+    try {
+     await navigator.clipboard.writeText(url);
+
+     setStatus('URL copied to clipboard.');
+    } catch (error) {
+     setStatus('Failed to copy URL.');
+    }
+  };
+
+
   const handleGenerate = async (event: FormEvent) => {
     event.preventDefault();
 
@@ -350,6 +361,16 @@ function App() {
                     Delete
                   </button>
 
+                  <button
+                  type="button"
+                  onClick={() => copyUrl(item.url)}
+                  className="copy-btn"
+                  >
+    
+                    Copy URL
+                  </button>
+
+
                 </article>
 
               ))}
@@ -384,7 +405,7 @@ function App() {
           </p>
          </section>
         )}
-        
+
         
 
       </main>
