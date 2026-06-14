@@ -1,23 +1,15 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, status  # Updated
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from qr_generator import generate_qr
-from models import Base
-from database import engine
-from database import SessionLocal
-from models import QRCode
-from schemas import UserCreate
-from models import User
-from auth import hash_password
-from schemas import UserLogin
-from auth import verify_password
-from jose import jwt
-from datetime import timedelta
-from fastapi import Depends
+from models import Base, QRCode, User                      # Cleaned up duplicates
+from database import engine, SessionLocal                  # Cleaned up duplicates
+from schemas import UserCreate, UserLogin
+from auth import hash_password, verify_password
+from jose import jwt, JWTError                              # Updated
+from datetime import timedelta, datetime, timezone         # Updated
 from fastapi.security import OAuth2PasswordBearer
-
 import uuid
-from datetime import datetime
 
 Base.metadata.create_all(bind=engine)
 
@@ -32,13 +24,12 @@ oauth2_scheme = OAuth2PasswordBearer(
 
 
 def create_access_token(data: dict):
-
     to_encode = data.copy()
-
-    expire = datetime.utcnow() + timedelta(
+    
+    # Updated for Python 3.13 timezone-aware safety
+    expire = datetime.now(timezone.utc) + timedelta(
         minutes=ACCESS_TOKEN_EXPIRE_MINUTES
     )
-
     to_encode.update({"exp": expire})
 
     return jwt.encode(
@@ -199,40 +190,33 @@ def login(user: UserLogin):
     "token_type": "bearer"
 }
 
-def get_current_user(
-    token: str = Depends(oauth2_scheme)
-):
-
-    payload = jwt.decode(
-        token,
-        SECRET_KEY,
-        algorithms=[ALGORITHM]
-    )
-
-    email = payload.get("sub")
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    # Added try/except block to handle invalid/expired tokens safely
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, 
+                detail="Invalid token payload"
+            )
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Could not validate credentials"
+        )
 
     db = SessionLocal()
-
-    user = (
-        db.query(User)
-        .filter(User.email == email)
-        .first()
-    )
-
+    user = db.query(User).filter(User.email == email).first()
     db.close()
 
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="User not found"
+        )
+
     return user
-
-@app.get("/me")
-def read_me(
-    current_user: User = Depends(get_current_user)
-):
-
-    return {
-        "username": current_user.username,
-        "email": current_user.email
-    }
-
 
 @app.get("/test-token")
 def test_token(
