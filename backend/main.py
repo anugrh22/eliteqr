@@ -54,9 +54,43 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    # Added try/except block to handle invalid/expired tokens safely
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, 
+                detail="Invalid token payload"
+            )
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Could not validate credentials"
+        )
+
+    db = SessionLocal()
+    user = db.query(User).filter(User.email == email).first()
+    db.close()
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="User not found"
+        )
+
+    return user
+
+
+
+
 
 @app.post("/create-qr")
-def create_qr(data: QRRequest):
+def create_qr(
+    data: QRRequest,
+    current_user: User = Depends(get_current_user)
+):
 
     qr_id = str(uuid.uuid4())
 
@@ -67,7 +101,8 @@ def create_qr(data: QRRequest):
     new_qr = QRCode(
         qr_id=qr_id,
         url=data.url,
-        created_at=created_at
+        created_at=created_at,
+        owner_id=current_user.id
     )
 
     db.add(new_qr)
@@ -157,33 +192,7 @@ def register(user: UserCreate):
     }
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    # Added try/except block to handle invalid/expired tokens safely
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, 
-                detail="Invalid token payload"
-            )
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="Could not validate credentials"
-        )
 
-    db = SessionLocal()
-    user = db.query(User).filter(User.email == email).first()
-    db.close()
-
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail="User not found"
-        )
-
-    return user
 
 
 @app.post("/login")
