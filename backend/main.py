@@ -157,39 +157,6 @@ def register(user: UserCreate):
     }
 
 
-@app.post("/login")
-def login(user: UserLogin):
-
-    db = SessionLocal()
-
-    existing_user = (
-        db.query(User)
-        .filter(User.email == user.email)
-        .first()
-    )
-
-    if not existing_user:
-        db.close()
-        return {"error": "Invalid email or password"}
-
-    if not verify_password(
-        user.password,
-        existing_user.password_hash
-    ):
-        db.close()
-        return {"error": "Invalid email or password"}
-
-    db.close()
-
-    token = create_access_token(
-    {"sub": existing_user.email}
-)
-
-    return {
-    "access_token": token,
-    "token_type": "bearer"
-}
-
 def get_current_user(token: str = Depends(oauth2_scheme)):
     # Added try/except block to handle invalid/expired tokens safely
     try:
@@ -217,6 +184,42 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         )
 
     return user
+
+
+@app.post("/login")
+def login(user: UserLogin):
+
+    db = SessionLocal()
+
+    existing_user = (
+        db.query(User)
+        .filter(User.email == user.email)
+        .first()
+    )
+
+    if not existing_user:
+        db.close()
+        return {"error": "Invalid email or password"}
+
+    if not verify_password(
+        user.password,
+        existing_user.password_hash
+    ):
+        db.close()
+        return {"error": "Invalid email or password"}
+
+    db.close()
+
+    token = create_access_token(
+        {"sub": existing_user.email}
+    )
+
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }
+
+
 
 @app.get("/test-token")
 def test_token(
