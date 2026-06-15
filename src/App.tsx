@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
+import Landing from "./Pages/Landing";
 
 type SavedQR = {
   id: number | string;
@@ -24,6 +25,7 @@ function App() {
   const [search, setSearch] = useState("");
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [selectedQR, setSelectedQR] = useState<SavedQR | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
 
   const previewApiUrl = "/create-qr";
 
@@ -277,10 +279,37 @@ const deleteQr = async (qrId: number | string) => {
     document.documentElement.setAttribute("data-theme", newTheme);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setToken("");
+    setIsLoggedIn(false);
+    setSavedQRs([]);
+    setQrImage("");
+    setPreview("");
+  };
+
+  const handleLoginSuccess = () => {
+    setToken(localStorage.getItem("token") || "");
+    setIsLoggedIn(true);
+    fetchQrs();
+  };
+
+  if (!isLoggedIn) {
+    return <Landing onLoginSuccess={handleLoginSuccess} />;
+  }
+
   return (
     <div className="app-shell">
       <header className="hero">
         <div className="header-top">
+          <button
+            onClick={handleLogout}
+            className="logout-btn"
+            title="Logout"
+          >
+            Logout
+          </button>
+
           <h1>EliteQR</h1>
 
           <button
@@ -293,22 +322,6 @@ const deleteQr = async (qrId: number | string) => {
         </div>
 
         <p>Create, preview, and manage your QR codes from the browser.</p>
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-            justifyContent: "center",
-            marginTop: "20px",
-          }}
-        >
-          <a href="/login">
-            <button>Login</button>
-          </a>
-
-          <a href="/register">
-            <button className="secondary">Register</button>
-          </a>
-        </div>
       </header>
 
       <main>
