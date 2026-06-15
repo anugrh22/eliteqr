@@ -132,11 +132,17 @@ def test_qrs():
 
 
 @app.get("/api/qrs")
-def get_qrs():
+def get_qrs(
+    current_user: User = Depends(get_current_user)
+):
 
     db = SessionLocal()
 
-    qrs = db.query(QRCode).all()
+    qrs = (
+        db.query(QRCode)
+        .filter(QRCode.owner_id == current_user.id)
+        .all()
+    )
 
     db.close()
 
@@ -145,14 +151,22 @@ def get_qrs():
 
 
 @app.delete("/api/qrs/{qr_id}")
-def delete_qr(qr_id: int):
+def delete_qr(
+    qr_id: int,
+    current_user: User = Depends(get_current_user)
+):
     db = SessionLocal()
 
     qr = db.query(QRCode).filter(QRCode.id == qr_id).first()
 
-    if qr:
-        db.delete(qr)
-        db.commit()
+    if not qr:
+        return {"error": "QR not found"}
+
+    if qr.owner_id != current_user.id:
+        return {"error": "Not authorized"}
+
+    db.delete(qr)
+    db.commit()
 
     db.close()
 

@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import QRCode from 'qrcode';
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import QRCode from "qrcode";
 
 type SavedQR = {
   id: number | string;
@@ -15,41 +15,52 @@ function buildSlug() {
 
 function App() {
   const [qrImage, setQrImage] = useState("");
-  const [label, setLabel] = useState('Menu QR');
-  const [url, setUrl] = useState('https://example.com');
-  const [preview, setPreview] = useState('');
+  const [label, setLabel] = useState("Menu QR");
+  const [url, setUrl] = useState("https://example.com");
+  const [preview, setPreview] = useState("");
   const [savedQRs, setSavedQRs] = useState<SavedQR[]>([]);
-  const [status, setStatus] = useState('Ready to generate a QR code.');
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [status, setStatus] = useState("Ready to generate a QR code.");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [search, setSearch] = useState("");
-  const [token, setToken] = useState(
-  localStorage.getItem("token") || ""
-  )
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [selectedQR, setSelectedQR] = useState<SavedQR | null>(null);
 
-  const previewApiUrl = '/create-qr';
+  const previewApiUrl = "/create-qr";
 
   const canGenerate = useMemo(() => url.trim().length > 0, [url]);
 
   const fetchQrs = async () => {
     try {
-      const response = await fetch("/api/qrs");
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setSavedQRs([]);
+        return;
+      }
+
+      const response = await fetch("/api/qrs", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       const data = await response.json();
 
-      setSavedQRs(data);
-
+      setSavedQRs(Array.isArray(data) ? data : []);
     } catch (error) {
       setStatus("Failed to load QR history.");
     }
   };
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('eliteqr_theme') as 'light' | 'dark' | null;
+    const savedTheme = localStorage.getItem("eliteqr_theme") as
+      | "light"
+      | "dark"
+      | null;
 
     if (savedTheme) {
       setTheme(savedTheme);
-      document.documentElement.setAttribute('data-theme', savedTheme);
+      document.documentElement.setAttribute("data-theme", savedTheme);
     }
   }, []);
 
@@ -58,45 +69,59 @@ function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('eliteqr_saved_qrs', JSON.stringify(savedQRs));
+    localStorage.setItem("eliteqr_saved_qrs", JSON.stringify(savedQRs));
   }, [savedQRs]);
 
   const generateLocalQR = async (value: string) => {
     return QRCode.toDataURL(value, {
-      errorCorrectionLevel: 'H',
-      type: 'image/png',
+      errorCorrectionLevel: "H",
+      type: "image/png",
       width: 300,
     });
   };
 
-  
+const deleteQr = async (qrId: number | string) => {
+  try {
+    
 
-  const deleteQr = async (qrId: number | string) => {
-    try {
-      const response = await fetch(`/api/qrs/${qrId}`, {
-        method: 'DELETE',
-      });
+    const token = localStorage.getItem("token");
 
-      if (!response.ok) {
-        throw new Error('Failed to delete QR code.');
-      }
+    const response = await fetch(`/api/qrs/${qrId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-      setSavedQRs((current) => current.filter((item) => String(item.id) !== String(qrId)));
-      setStatus('QR code deleted successfully.');
-      await fetchQrs();
-    } catch (error) {
-      console.error(error);
-      setStatus('Unable to delete QR code. Please try again.');
+    
+
+    if (!response.ok) {
+      throw new Error("Failed to delete QR code.");
     }
-  };
+
+    setSavedQRs((current) =>
+      current.filter((item) => String(item.id) !== String(qrId))
+    );
+
+    setStatus("QR code deleted successfully.");
+
+    
+    await fetchQrs();
+   
+
+  } catch (error) {
+    console.error("DELETE ERROR:", error);
+    setStatus("Unable to delete QR code. Please try again.");
+  }
+};
 
   const copyUrl = async (url: string) => {
     try {
-     await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(url);
 
-     setStatus('URL copied to clipboard.');
+      setStatus("URL copied to clipboard.");
     } catch (error) {
-     setStatus('Failed to copy URL.');
+      setStatus("Failed to copy URL.");
     }
   };
 
@@ -104,16 +129,16 @@ function App() {
     const dataStr = JSON.stringify(savedQRs, null, 2);
 
     const blob = new Blob([dataStr], {
-      type: 'application/json',
+      type: "application/json",
     });
 
     const url = URL.createObjectURL(blob);
 
-    const link = document.createElement('a');
+    const link = document.createElement("a");
 
     link.href = url;
 
-    link.download = 'exported_qrs.json';
+    link.download = "exported_qrs.json";
 
     document.body.appendChild(link);
 
@@ -123,33 +148,32 @@ function App() {
 
     URL.revokeObjectURL(url);
 
-    setStatus('QR history exported successfully.');
+    setStatus("QR history exported successfully.");
   };
 
   const clearAllQrs = () => {
     const confirmDelete = window.confirm(
-      'Are you sure you want to delete all QR history?'
+      "Are you sure you want to delete all QR history?",
     );
 
-   if (!confirmDelete) return;
+    if (!confirmDelete) return;
 
-   setSavedQRs([]);
+    setSavedQRs([]);
 
-   localStorage.removeItem('eliteqr_saved_qrs');
+    localStorage.removeItem("eliteqr_saved_qrs");
 
-   setStatus('All QR history cleared.');
+    setStatus("All QR history cleared.");
   };
-
 
   const handleGenerate = async (event: FormEvent) => {
     event.preventDefault();
 
     if (!canGenerate) {
-      setStatus('Please enter a valid URL first.');
+      setStatus("Please enter a valid URL first.");
       return;
     }
 
-    setStatus('Generating QR code...');
+    setStatus("Generating QR code...");
 
     try {
       const token = localStorage.getItem("token");
@@ -157,54 +181,48 @@ function App() {
       if (!token) {
         setStatus("Please login first.");
         return;
-      } 
-
+      }
 
       const response = await fetch(previewApiUrl, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           url: url.trim(),
-          width: 300
+          width: 300,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Backend preview request failed');
+        throw new Error("Backend preview request failed");
       }
 
       const data = await response.json();
 
       if (
-        typeof data.image !== 'string' ||
-        !data.image.startsWith('data:image/png;base64,')
+        typeof data.image !== "string" ||
+        !data.image.startsWith("data:image/png;base64,")
       ) {
-        throw new Error('Unexpected backend preview response');
+        throw new Error("Unexpected backend preview response");
       }
 
       setPreview(data.image);
       setQrImage(data.image);
 
-
       await fetchQrs();
 
-      setStatus('QR code generated successfully.');
-
+      setStatus("QR code generated successfully.");
     } catch (backendError) {
-
       try {
         const qrData = await generateLocalQR(url.trim());
 
         setPreview(qrData);
 
-        setStatus('Backend preview unavailable. Generated locally instead.');
-
+        setStatus("Backend preview unavailable. Generated locally instead.");
       } catch (localError) {
-
-        setStatus('Failed to generate QR code. Check the URL and try again.');
+        setStatus("Failed to generate QR code. Check the URL and try again.");
       }
     }
   };
@@ -230,15 +248,15 @@ function App() {
 
   const handleDownload = () => {
     if (!preview) {
-      setStatus('Generate the QR code before downloading.');
+      setStatus("Generate the QR code before downloading.");
       return;
     }
 
-    const link = document.createElement('a');
+    const link = document.createElement("a");
 
     link.href = preview;
 
-    link.download = `${label.trim() || 'qrcode'}.png`;
+    link.download = `${label.trim() || "qrcode"}.png`;
 
     document.body.appendChild(link);
 
@@ -246,22 +264,21 @@ function App() {
 
     document.body.removeChild(link);
 
-    setStatus('QR code downloaded successfully.');
+    setStatus("QR code downloaded successfully.");
   };
 
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
+    const newTheme = theme === "light" ? "dark" : "light";
 
     setTheme(newTheme);
 
-    localStorage.setItem('eliteqr_theme', newTheme);
+    localStorage.setItem("eliteqr_theme", newTheme);
 
-    document.documentElement.setAttribute('data-theme', newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
   };
 
   return (
     <div className="app-shell">
-
       <header className="hero">
         <div className="header-top">
           <h1>EliteQR</h1>
@@ -271,38 +288,36 @@ function App() {
             onClick={toggleTheme}
             title="Toggle theme"
           >
-            {theme === 'light' ? '🌙' : '☀️'}
+            {theme === "light" ? "🌙" : "☀️"}
           </button>
         </div>
 
         <p>Create, preview, and manage your QR codes from the browser.</p>
-        <div style={{
-          display: 'flex',
-         gap: '10px',
-         justifyContent: 'center',
-         marginTop: '20px'
-       }}>
-         <a href="/login">
-           <button>Login</button>
-         </a>
+        <div
+          style={{
+            display: "flex",
+            gap: "10px",
+            justifyContent: "center",
+            marginTop: "20px",
+          }}
+        >
+          <a href="/login">
+            <button>Login</button>
+          </a>
 
-         <a href="/register">
-           <button className="secondary">Register</button>
-         </a>
-       </div>
-       
+          <a href="/register">
+            <button className="secondary">Register</button>
+          </a>
+        </div>
       </header>
 
       <main>
-
         <section className="card form-card">
           <h2>Create QR Code</h2>
 
           <form onSubmit={handleGenerate}>
-
             <label>
               Label
-
               <input
                 value={label}
                 onChange={(event) => setLabel(event.target.value)}
@@ -312,7 +327,6 @@ function App() {
 
             <label>
               Destination URL
-
               <input
                 type="text"
                 placeholder="Enter URL"
@@ -321,37 +335,18 @@ function App() {
               />
             </label>
 
-            
-
-            {qrImage && (
-              <img
-                src={qrImage}
-                alt="QR Code"
-                width="300"
-              />
-            )}
+            {qrImage && <img src={qrImage} alt="QR Code" width="300" />}
 
             <div className="button-row">
+              <button type="submit">Generate Preview</button>
 
-              <button type="submit">
-                Generate Preview
-              </button>
-
-              <button
-                type="button"
-                onClick={downloadQR}
-                className="secondary"
-              >
+              <button type="button" onClick={downloadQR} className="secondary">
                 Download QR
               </button>
-
             </div>
-
           </form>
 
-          <div className="status-box">
-            {status}
-          </div>
+          <div className="status-box">{status}</div>
         </section>
 
         <section className="card preview-card">
@@ -367,7 +362,6 @@ function App() {
         </section>
 
         <section className="card saved-card">
-
           <h2>Saved QR Codes</h2>
 
           <input
@@ -376,135 +370,98 @@ function App() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
-               width: "100%",
-               padding: "10px",
-               marginBottom: "16px",
-               borderRadius: "8px",
+              width: "100%",
+              padding: "10px",
+              marginBottom: "16px",
+              borderRadius: "8px",
             }}
           />
-          
-          <div
-              style={{
-                display: 'flex',
-                gap: '10px',
-                marginBottom: '16px',
-              }}
-          >
-             <button
-               type="button"
-               onClick={exportQrs}
-               className="secondary"
-             >
-               Export History
-             </button>
 
-             <button
-               type="button"
-               onClick={clearAllQrs}
-               className="delete-btn"
-             >
-  
-               Clear All
-             </button>
+          <div
+            style={{
+              display: "flex",
+              gap: "10px",
+              marginBottom: "16px",
+            }}
+          >
+            <button type="button" onClick={exportQrs} className="secondary">
+              Export History
+            </button>
+
+            <button type="button" onClick={clearAllQrs} className="delete-btn">
+              Clear All
+            </button>
           </div>
 
-
-         
           {savedQRs.length === 0 ? (
-
-            
             <p>No saved QR codes yet. Generate one to start.</p>
-
           ) : (
-
             <div className="saved-grid">
-
-             {savedQRs
-               .filter((item) =>
-                 item.url.toLowerCase().includes(search.toLowerCase())
-               )
-               .map((item) => (
-
-                <article
-                  key={item.id}
-                  className="saved-item"
-                  onClick={() => setSelectedQR(item)}
-                  style={{ cursor: "pointer" }}
-                >
-
-                  {item.image && (
-                    <img
-                      src={item.image}
-                      alt="Saved QR"
-                      width="80"
-                    />
-                  )}
-
-                  <div>
-                    <strong>{item.url}</strong>
-
-                    <p>{item.created_at}</p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => deleteQr(item.id)}
-                    className="delete-btn"
-                    title="Delete QR"
-                    aria-label="Delete QR"
+              {savedQRs
+                .filter((item) =>
+                  item.url.toLowerCase().includes(search.toLowerCase()),
+                )
+                .map((item) => (
+                  <article
+                    key={item.id}
+                    className="saved-item"
+                    onClick={() => setSelectedQR(item)}
+                    style={{ cursor: "pointer" }}
                   >
-                    Delete
-                  </button>
+                    {item.image && (
+                      <img src={item.image} alt="Saved QR" width="80" />
+                    )}
 
-                  <button
-                  type="button"
-                  onClick={() => copyUrl(item.url)}
-                  className="copy-btn"
-                  >
-    
-                    Copy URL
-                  </button>
+                    <div>
+                      <strong>{item.url}</strong>
 
+                      <p>{item.created_at}</p>
+                    </div>
 
-                </article>
+                    <button
+                      type="button"
+                      onClick={() => deleteQr(item.id)}
+                      className="delete-btn"
+                      title="Delete QR"
+                      aria-label="Delete QR"
+                    >
+                      Delete
+                    </button>
 
-              ))}
-
+                    <button
+                      type="button"
+                      onClick={() => copyUrl(item.url)}
+                      className="copy-btn"
+                    >
+                      Copy URL
+                    </button>
+                  </article>
+                ))}
             </div>
-
           )}
-
         </section>
         {selectedQR && (
           <section className="card preview-card">
             <h2>QR Details</h2>
 
             {selectedQR.image && (
-              <img
-                src={selectedQR.image}
-                alt="Selected QR"
-                width="200"
-              />
-           )}
+              <img src={selectedQR.image} alt="Selected QR" width="200" />
+            )}
 
-           <p>
-            <strong>ID:</strong> {selectedQR.id}
-           </p>
+            <p>
+              <strong>ID:</strong> {selectedQR.id}
+            </p>
 
-           <p>
-            <strong>URL:</strong> {selectedQR.url}
-          </p>
+            <p>
+              <strong>URL:</strong> {selectedQR.url}
+            </p>
 
-           <p>
-            <strong>Created:</strong> {selectedQR.created_at}
-          </p>
-         </section>
+            <p>
+              <strong>Created:</strong> {selectedQR.created_at}
+            </p>
+          </section>
         )}
-
-        
-
       </main>
-
     </div>
   );
 }
