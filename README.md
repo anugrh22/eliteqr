@@ -1,29 +1,70 @@
-# EliteQR Frontend
+# EliteQR
 
-A starter React + Vite front-end for creating and previewing QR codes with backend persistence.
+EliteQR is a full-stack QR Code Generator built with React, FastAPI, and SQLite.
 
-## Setup
+Users can register, log in, generate QR codes, view their QR history, and manage their own QR codes securely using JWT authentication.
 
-1. Open a terminal in the project folder
-2. Run `npm install`
-3. Run `npm run dev:backend` in one terminal
-4. Run `npm run dev` in another terminal
+---
 
-## Backend
+## Features
 
-The backend runs on `http://localhost:4000` and exposes:
+### Authentication
+- User Registration
+- User Login
+- JWT Token Authentication
+- Protected API Routes
 
-- `GET /api/qrs` — fetch saved QR codes
-- `POST /api/qrs` — save a QR code to disk
-- `POST /api/generate` — generate a QR payload from a URL
-- `GET /api/qrs/:id/redirect` — redirect using a saved QR entry
+### QR Management
+- Generate QR Codes
+- Download QR Codes as PNG
+- View QR History
+- Delete QR Codes
+- QR Ownership (Users can only view and delete their own QRs)
 
-The frontend proxies `/api` requests to the backend in development.
+### UI Features
+- Dark Mode / Light Mode
+- Search QR History
+- Export QR History
+- Responsive Interface
 
-## What this includes
+---
 
-- React + TypeScript app
-- Backend persistence with Express
-- QR code generation both in frontend preview and backend save
-- Saved QR list stored on the server and synced to browser localStorage
-- Simple form for URL and QR label
+## Tech Stack
+
+### Frontend
+- React
+- TypeScript
+- Vite
+
+### Backend
+- FastAPI
+- SQLAlchemy
+- Passlib (bcrypt)
+- Python-JOSE (JWT)
+
+### Database
+- SQLite
+
+---
+
+## Project Structure
+
+```text
+eliteqr/
+│
+├── backend/
+│   ├── main.py
+│   ├── models.py
+│   ├── schemas.py
+│   ├── database.py
+│   ├── auth.py
+│   ├── qr_generator.py
+│   └── qr.db
+│
+├── src/
+│   ├── App.tsx
+│   ├── Login.tsx
+│   ├── Register.tsx
+│   └── ...
+│
+└── README.md
