@@ -8,6 +8,7 @@ type SavedQR = {
   url: string;
   image?: string;
   created_at?: string;
+  scan_count: number;
 };
 
 function buildSlug() {
@@ -34,6 +35,7 @@ function App() {
   const fetchQrs = async () => {
     try {
       const token = localStorage.getItem("token");
+      
 
       if (!token) {
         setSavedQRs([]);
@@ -41,10 +43,21 @@ function App() {
       }
 
       const response = await fetch("/api/qrs", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: getAuthHeaders(),
       });
+
+      if (response.status === 401) {
+        localStorage.removeItem("token");
+        setToken("");
+        setIsLoggedIn(false);
+        setSavedQRs([]);
+        setStatus("Session expired. Please login again.");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Failed to load QR history");
+      }
 
       const data = await response.json();
 
@@ -67,12 +80,20 @@ function App() {
   }, []);
 
   useEffect(() => {
-    fetchQrs();
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetchQrs();
+    }
   }, []);
 
   useEffect(() => {
     localStorage.setItem("eliteqr_saved_qrs", JSON.stringify(savedQRs));
   }, [savedQRs]);
+
+  const getAuthHeaders = (): HeadersInit => {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
 
   const generateLocalQR = async (value: string) => {
     return QRCode.toDataURL(value, {
@@ -87,15 +108,24 @@ const deleteQr = async (qrId: number | string) => {
     
 
     const token = localStorage.getItem("token");
+    if (!token) {
+      setStatus("Please login first.");
+      return;
+    }
 
     const response = await fetch(`/api/qrs/${qrId}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(),
     });
 
-    
+    if (response.status === 401) {
+      localStorage.removeItem("token");
+      setToken("");
+      setIsLoggedIn(false);
+      setSavedQRs([]);
+      setStatus("Session expired. Please login again.");
+      return;
+    }
 
     if (!response.ok) {
       throw new Error("Failed to delete QR code.");
@@ -294,6 +324,36 @@ const deleteQr = async (qrId: number | string) => {
     fetchQrs();
   };
 
+  const editQr = async (qrId: number | string) => {
+    const newUrl = prompt("Enter new URL");
+
+    if (!newUrl) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setStatus("Please login first.");
+      return;
+    }
+
+    const response = await fetch(`/api/qrs/${qrId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({
+        url: newUrl,
+      }),
+    });
+
+    if (response.ok) {
+      alert("QR updated!");
+      await fetchQrs();
+    } else {
+      alert("Update failed");
+    }
+  };
+
   if (!isLoggedIn) {
     return <Landing onLoginSuccess={handleLoginSuccess} />;
   }
@@ -431,6 +491,9 @@ const deleteQr = async (qrId: number | string) => {
                       <p>{item.created_at}</p>
                     </div>
 
+
+                    <p>Scans: {item.scan_count}</p>
+
                     <button
                       type="button"
                       onClick={() => deleteQr(item.id)}
@@ -447,6 +510,16 @@ const deleteQr = async (qrId: number | string) => {
                       className="copy-btn"
                     >
                       Copy URL
+                    </button>
+
+
+
+                    <button
+                      type="button"
+                      onClick={() => editQr(item.id)}
+                      className="edit-btn"
+                    >
+                      Edit
                     </button>
                   </article>
                 ))}
