@@ -10,6 +10,8 @@ from jose import jwt, JWTError                              # Updated
 from datetime import timedelta, datetime, timezone         # Updated
 from fastapi.security import OAuth2PasswordBearer
 import uuid
+from fastapi.responses import RedirectResponse
+from urllib.parse import urlparse
 
 Base.metadata.create_all(bind=engine)
 
@@ -42,6 +44,10 @@ def create_access_token(data: dict):
 class QRRequest(BaseModel):
     url: str
     width: int = 300
+
+
+class UpdateQRRequest(BaseModel):
+    url: str
 
 
 app = FastAPI()
@@ -83,7 +89,13 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     return user
 
 
+def is_valid_url(url):
+    result = urlparse(url)
 
+    return (
+        result.scheme in ["http", "https"]
+        and result.netloc
+    )
 
 
 @app.post("/create-qr")
@@ -98,6 +110,9 @@ def create_qr(
 
     db = SessionLocal()
 
+    if not is_valid_url(data.url):
+        return {"error": "Invalid URL"}
+
     new_qr = QRCode(
         qr_id=qr_id,
         url=data.url,
@@ -111,23 +126,19 @@ def create_qr(
 
     db.close()
 
-    image_data = generate_qr(data.url, data.width)
+    dynamic_url = f"http://172.20.10.3:8001/r/{qr_id}"
+
+    image_data = generate_qr(
+        dynamic_url,
+        data.width
+    )
 
     return {
         "image": f"data:image/png;base64,{image_data}"
     }
 
 
-@app.get("/test-qrs")
-def test_qrs():
 
-    db = SessionLocal()
-
-    qrs = db.query(QRCode).all()
-
-    db.close()
-
-    return qrs
 
 
 
@@ -188,7 +199,10 @@ def register(user: UserCreate):
 
     if existing_user:
         db.close()
-        return {"error": "Email already exists"}
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already exists"
+        )
 
     new_user = User(
         username=user.username,
@@ -222,14 +236,20 @@ def login(user: UserLogin):
 
     if not existing_user:
         db.close()
-        return {"error": "Invalid email or password"}
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
 
     if not verify_password(
         user.password,
         existing_user.password_hash
     ):
         db.close()
-        return {"error": "Invalid email or password"}
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
 
     db.close()
 
@@ -251,3 +271,70 @@ def test_token(
     return {
         "email": current_user.email
     }
+
+
+@app.get("/r/{qr_id}")
+def redirect_qr(qr_id: str):
+
+    db = SessionLocal()
+
+    qr = (
+        db.query(QRCode)
+        .filter(QRCode.qr_id == qr_id)
+        .first()
+    )
+
+    if not qr:
+        db.close()
+        return {"error": "QR not found"}
+
+    qr.scan_count += 1
+
+    db.commit()
+
+    url = qr.url
+
+    db.close()
+
+    return RedirectResponse(url=url)
+
+
+
+@app.put("/api/qrs/{qr_id}")
+def update_qr(
+    qr_id: int,
+    data: UpdateQRRequest,
+    current_user: User = Depends(get_current_user)
+):
+    db = SessionLocal()
+
+    qr = db.query(QRCode).filter(QRCode.id == qr_id).first()
+
+    if not qr:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="QR not found"
+        )
+
+    if qr.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this QR"
+        )
+
+    if not is_valid_url(data.url):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid URL"
+        )
+
+    qr.url = data.url
+    db.commit()
+    db.close()
+
+    return {"message": "QR updated"}
+
+
+
+
+

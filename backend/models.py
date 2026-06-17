@@ -1,6 +1,7 @@
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Integer
 
 Base = declarative_base()
 
@@ -17,6 +18,8 @@ class QRCode(Base):
     created_at = Column(String)
 
     owner_id = Column(Integer, ForeignKey("users.id"))
+
+    scan_count = Column(Integer, default=0)
 
 
 class User(Base):
