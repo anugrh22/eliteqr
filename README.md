@@ -1,11 +1,3 @@
-# EliteQR 🚀
-
-EliteQR is a Dynamic QR Code Generator built with FastAPI, React, SQLite, and JWT Authentication.
-
-Unlike traditional static QR codes, EliteQR allows users to update the destination URL of a QR code even after it has been generated. The same QR image can redirect to different websites without needing to create a new QR code.
-
----
-
 ## Features
 
 ### 🔐 Authentication
@@ -14,278 +6,78 @@ Unlike traditional static QR codes, EliteQR allows users to update the destinati
 - JWT-Based Authentication
 - Protected API Routes
 
-### 📱 Dynamic QR Codes
-- Generate QR Codes for any valid URL
-- Dynamic redirection using unique QR IDs
-- Edit destination URLs anytime
-- No need to regenerate QR codes after updating links
+### 🔄 Dynamic QR Codes
+Unlike traditional QR codes, EliteQR generates dynamic QR codes.
 
-### 📂 QR Management
-- View all personal QR codes
-- Edit QR destinations
-- Delete QR codes
-- Ownership verification for all operations
-
-### 📊 Scan Tracking
-- Track the number of QR scans
-- Display scan count in the dashboard
-- Automatic scan count updates on every redirect
-
-### 🛡️ Security
-- Password hashing
-- JWT authentication
-- URL validation
-- Protected user-specific resources
-
----
-
-# Tech Stack
-
-## Backend
-- FastAPI
-- SQLAlchemy
-- SQLite
-- Python-Jose (JWT)
-- Passlib
-- qrcode
-
-## Frontend
-- React
-- TypeScript
-- Vite
-
----
-
-# Project Structure
+A generated QR code contains a unique redirect URL:
 
 ```text
-eliteqr/
-│
-├── backend/
-│   ├── main.py
-│   ├── models.py
-│   ├── database.py
-│   ├── auth.py
-│   ├── schemas.py
-│   ├── qr_generator.py
-│   └── requirements.txt
-│
-├── frontend/
-│   ├── src/
-│   ├── public/
-│   ├── package.json
-│   └── vite.config.ts
-│
-└── README.md
+https://your-domain.com/r/<qr_id>
 ```
 
----
-
-# Installation
-
-## Backend Setup
-
-Create a virtual environment:
-
-```bash
-python -m venv venv
-```
-
-Activate it:
-
-### Windows
-
-```bash
-venv\Scripts\activate
-```
-
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-Run the backend:
-
-```bash
-py -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload
-```
-
-Backend URL:
-
-```text
-http://localhost:8001
-```
-
----
-
-## Frontend Setup
-
-Navigate to frontend:
-
-```bash
-cd frontend
-```
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Run development server:
-
-```bash
-npm run dev
-```
-
-Frontend URL:
-
-```text
-http://localhost:5174
-```
-
----
-
-# API Endpoints
-
-## Authentication
-
-### Register
-
-```http
-POST /register
-```
-
-### Login
-
-```http
-POST /login
-```
-
-Returns:
-
-```json
-{
-  "access_token": "jwt_token",
-  "token_type": "bearer"
-}
-```
-
----
-
-## QR Operations
-
-### Create QR
-
-```http
-POST /create-qr
-```
-
-### Get User QRs
-
-```http
-GET /api/qrs
-```
-
-### Update QR
-
-```http
-PUT /api/qrs/{id}
-```
-
-### Delete QR
-
-```http
-DELETE /api/qrs/{id}
-```
-
----
-
-## Redirect Endpoint
-
-```http
-GET /r/{qr_id}
-```
-
-Functionality:
+When scanned:
 
 ```text
 QR Scan
    ↓
-Redirect Route
+EliteQR Redirect Server
    ↓
-Scan Count +1
-   ↓
-Destination Website
+Stored Destination URL
 ```
 
----
+The destination URL can be edited at any time without generating a new QR code.
 
-# Example Workflow
-
-### Step 1
-
-Create a QR code for:
+Example:
 
 ```text
-https://google.com
+QR Created → Google
 ```
 
-### Step 2
-
-Scan the QR code.
-
-Result:
+Later:
 
 ```text
-Google opens
+Same QR → YouTube
 ```
 
-### Step 3
+No new QR image is required.
 
-Edit the QR destination:
+### 📂 QR Management
+- Create QR Codes
+- View Personal QR Codes
+- Edit QR Destinations
+- Delete QR Codes
+- User Ownership Validation
+
+### 📊 Scan Analytics
+Every QR scan is automatically recorded.
+
+Features include:
+
+- Real-time Scan Counting
+- Total Scan Display
+- Automatic Increment on Every Redirect
+
+Example:
 
 ```text
-https://youtube.com
+Scans: 0
 ```
 
-### Step 4
-
-Scan the same QR code again.
-
-Result:
+After one scan:
 
 ```text
-YouTube opens
+Scans: 1
 ```
 
-No new QR generation required.
+After ten scans:
 
----
+```text
+Scans: 10
+```
 
-# Future Improvements
-
-- Custom QR Labels
-- Download QR as PNG
-- Advanced Analytics Dashboard
-- QR Categories
-- Admin Dashboard
-- Abuse Reporting System
-- Google Safe Browsing Integration
-- Email Verification
-- Public Deployment & Custom Domain Support
-
----
-
-# Authors
-
-**EliteQR** was collaboratively developed by:
-
-- **Anugrah**
-- **Arjun KS**
-
-A full-stack Dynamic QR Code Management Platform built using FastAPI, React, SQLite, and JWT Authentication.
-
----
-© 2026 EliteQR. All rights reserved.
+### 🛡️ Security
+- Password Hashing
+- JWT Authentication
+- URL Validation
+- Protected User Resources
+- Ownership Verification for Edit/Delete Operations
